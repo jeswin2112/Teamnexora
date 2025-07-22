@@ -54,9 +54,27 @@ exports.handler = async (event, context) => {
             
             console.log('Database connection pool created');
             
-            // Test the connection
-            await pool.query('SELECT NOW()');
-            console.log('Database connection test successful');
+            // Test the connection with a simple query
+            try {
+                const testResult = await pool.query('SELECT NOW()');
+                console.log('Database connection test successful:', testResult.rows[0]);
+                
+                // Check if the contacts table exists
+                const tableCheck = await pool.query(`
+                    SELECT EXISTS (
+                        SELECT FROM information_schema.tables 
+                        WHERE table_schema = 'public' 
+                        AND table_name = 'contacts'
+                    )`);
+                console.log('Contacts table exists:', tableCheck.rows[0].exists);
+                
+                if (!tableCheck.rows[0].exists) {
+                    throw new Error('Contacts table does not exist in the database');
+                }
+            } catch (testError) {
+                console.error('Database test failed:', testError);
+                throw new Error(`Database test failed: ${testError.message}`);
+            }
 
             // Insert the form data into the database
             const query = `
