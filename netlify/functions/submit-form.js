@@ -1,4 +1,8 @@
 const { Pool } = require('pg');
+const sgMail = require('@sendgrid/mail');
+
+// Initialize SendGrid with API key from environment variable
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // Log database connection info (without sensitive data)
 const logConnectionInfo = (connectionString) => {
@@ -117,6 +121,38 @@ exports.handler = async (event, context) => {
             const result = await pool.query(query, values);
             console.log('Query result:', result.rows[0]);
 
+            // Send auto-response email using SendGrid
+            const msg = {
+                to: email,  // The email from the contact form
+                from: {
+                    email: 'gissjeswin@gmail.com',  // Your verified sender email
+                    name: 'Nexora Team'            // Your sender name
+                },
+                replyTo: 'gissjeswin@gmail.com',    // Where replies should go
+                subject: 'Thank you for contacting Nexora',
+                text: `Hello ${name},\n\nThank you for reaching out to us! We have received your message and will get back to you as soon as possible.\n\nYour message:\n${message}\n\nBest regards,\nThe Nexora Team`,
+                html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <h2>Hello ${name},</h2>
+                        <p>Thank you for reaching out to us! We have received your message and will get back to you as soon as possible.</p>
+                        
+                        <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                            <p style="font-style: italic;">${message.replace(/\n/g, '<br>')}</p>
+                        </div>
+                        
+                        <p>Best regards,<br>The Nexora Team</p>
+                        
+                        <div style="margin-top: 30px; font-size: 12px; color: #666; border-top: 1px solid #eee; padding-top: 10px;">
+                            <p>This is an automated message. Please do not reply to this email.</p>
+                        </div>
+                    </div>
+                `,
+            };
+
+            // Send the email
+            await sgMail.send(msg);
+            console.log('Auto-response email sent successfully');
+
             return {
                 statusCode: 200,
                 body: JSON.stringify({ 
@@ -149,6 +185,12 @@ exports.handler = async (event, context) => {
 
     } catch (error) {
         console.error('Unexpected error:', error);
+        
+        // Log detailed error info for debugging
+        if (error.response) {
+            console.error('SendGrid Error Response:', error.response.body);
+        }
+
         return {
             statusCode: 500,
             body: JSON.stringify({ 
