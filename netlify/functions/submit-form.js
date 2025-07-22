@@ -1,5 +1,18 @@
 const { Pool } = require('pg');
 
+// Log database connection info (without sensitive data)
+const logConnectionInfo = (connectionString) => {
+    if (!connectionString) return 'No connection string found';
+    const url = new URL(connectionString.replace(/^postgresql:/, 'postgres:'));
+    return {
+        host: url.hostname,
+        port: url.port,
+        database: url.pathname.replace(/^\//, ''),
+        user: url.username,
+        ssl: { rejectUnauthorized: false }
+    };
+};
+
 exports.handler = async (event, context) => {
     console.log('Received event:', JSON.stringify(event, null, 2));
     
@@ -42,17 +55,32 @@ exports.handler = async (event, context) => {
         }
 
         console.log('Connecting to database...');
+        console.log('Database connection info:', 
+            logConnectionInfo(process.env.DATABASE_URL));
+            
         let pool;
         try {
             // Create a new connection pool using environment variables
-            pool = new Pool({
+            const poolConfig = {
                 connectionString: process.env.DATABASE_URL,
                 ssl: {
                     rejectUnauthorized: false // Required for some PostgreSQL providers
                 }
-            });
+            };
             
-            console.log('Database connection pool created');
+            console.log('Creating database connection pool with config:', 
+                { ...poolConfig, connectionString: '***REDACTED***' });
+                
+            pool = new Pool(poolConfig);
+            
+            // Test the connection immediately
+            const client = await pool.connect();
+            try {
+                const now = await client.query('SELECT NOW()');
+                console.log('Database connection successful. Server time:', now.rows[0].now);
+            } finally {
+                client.release();
+            }
             
             // Test the connection with a simple query
             try {
