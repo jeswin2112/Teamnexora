@@ -1,6 +1,7 @@
 [build]
   publish = "/"
-  command = ""
+  command = "npm install && npm install --prefix netlify/functions"
+  functions = "netlify/functions"
 
 [build.environment]
   NODE_VERSION = "16"
@@ -14,9 +15,10 @@
 [dev]
   publish = "/"
   port = 3000
+  functions = "netlify/functions"
 
-[dev.proxy]
-  # Add any proxy rules here if needed
+[functions]
+  node_bundler = "esbuild"
 
 [context.production]
   command = ""
