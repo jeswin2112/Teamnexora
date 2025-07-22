@@ -1,0 +1,28 @@
+[build]
+  publish = "/"
+  command = ""
+
+[build.environment]
+  NODE_VERSION = "16"
+  NPM_VERSION = "8"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[dev]
+  publish = "/"
+  port = 3000
+
+[dev.proxy]
+  # Add any proxy rules here if needed
+
+[context.production]
+  command = ""
+
+[context.deploy-preview]
+  command = ""
+
+[context.branch-deploy]
+  command = ""
