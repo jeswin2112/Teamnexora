@@ -52,24 +52,57 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Form submission handling
-    const contactForm = document.querySelector('.contact-form');
+    const contactForm = document.getElementById('contactForm');
     if (contactForm) {
-        contactForm.addEventListener('submit', function(e) {
+        contactForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            // Get form data
-            const formData = new FormData(this);
-            const formObject = {};
-            formData.forEach((value, key) => {
-                formObject[key] = value;
-            });
+            const formData = new FormData(contactForm);
+            const formMessage = document.getElementById('formMessage');
+            const submitButton = contactForm.querySelector('button[type="submit"]');
+            const originalButtonText = submitButton.textContent;
             
-            // Here you would typically send the form data to a server
-            console.log('Form submitted:', formObject);
-            
-            // Show success message
-            alert('Thank you for your message! We will get back to you soon.');
-            this.reset();
+            try {
+                // Disable submit button and show loading state
+                submitButton.disabled = true;
+                submitButton.textContent = 'Sending...';
+                
+                const response = await fetch('/.netlify/functions/submit-form', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        name: formData.get('name'),
+                        email: formData.get('email'),
+                        message: formData.get('message')
+                    }),
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    formMessage.textContent = 'Message sent successfully!';
+                    formMessage.className = 'form-message success';
+                    contactForm.reset();
+                } else {
+                    throw new Error(result.error || 'Failed to send message');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                formMessage.textContent = error.message || 'An error occurred. Please try again.';
+                formMessage.className = 'form-message error';
+            } finally {
+                // Re-enable submit button
+                submitButton.disabled = false;
+                submitButton.textContent = originalButtonText;
+                
+                // Hide message after 5 seconds
+                setTimeout(() => {
+                    formMessage.textContent = '';
+                    formMessage.className = 'form-message';
+                }, 5000);
+            }
         });
     }
     

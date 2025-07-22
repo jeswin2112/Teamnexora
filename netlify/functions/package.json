@@ -1,0 +1,12 @@
+{
+  "name": "nexora-contact-form",
+  "version": "1.0.0",
+  "description": "Netlify Function to handle contact form submissions",
+  "main": "submit-form.js",
+  "dependencies": {
+    "pg": "^8.11.3"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
